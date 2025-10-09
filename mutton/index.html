@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Mutton Market Analysis - Hyderabad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Earthy Tones -->
+    <!-- Application Structure Plan: The application is designed as a focused dashboard. It presents two main price comparisons (National/Local), followed by the essential Partnership Profit Modeler (Hybrid), the AI Pricing Strategy tool, and the AI Marketing Copy tool. This structure prioritizes financial viability and tactical execution based on market data. -->
+    <!-- Visualization & Content Choices: 
+    - Report Info: Mutton prices across national/local platforms & commission rates. Goal: Compare market positioning. Viz: Two distinct Interactive Bar Charts (Chart.js) and two HTML Tables. Interaction: Separate cut filters for each market type. Justification: Enables direct comparison between high-margin (National) and low-price-floor (Local) competition. Library: Chart.js (Canvas-based).
+    - Report Info: Financial breakdown (COGS, Profit, Retail Price). Goal: Model partnership viability for National/Local Brands. Presentation: Single Interactive Input Form and Metric Cards with a new Quantity Selector, combining all platforms/archetypes into one dropdown. Justification: Allows flexible financial modeling across the entire market spectrum. Method: HTML/Tailwind/JS.
+    - LLM Features: Pricing Strategy, Marketing Copy Generator. Goal: Provide actionable, AI-driven business tools. Justification: Turns passive data viewing into active strategic planning. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 50vh;
+            }
+        }
+        .metric-card {
+            background-color: #FFFFFF;
+            border: 1px solid #F0EAE1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .result-card {
+            background-color: #F8FBFD;
+            border: 2px solid #3B82F6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .recommendation-card {
+             background-color: #FFFFFF;
+             border: 1px solid #E5E7EB;
+             transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .table-header {
+            background-color: #F9FAFB;
+        }
+        .ai-output-box {
+            background-color: #F9FDF9; 
+            border: 1px dashed #B8E0B8;
+            min-height: 150px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #10b981; 
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Online Mutton Market Analysis</h1>
+            <p class="mt-2 text-lg text-gray-600">Strategic Dashboard for Hyderabad Suppliers (National & Local View)</p>
+        </header>
+
+        <main>
+            <!-- Introduction -->
+            <section id="introduction" class="mb-12 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-3">Analyzing the Partnership Landscape</h2>
+                <p class="text-gray-700 leading-relaxed">
+                    This dashboard compares **National Platforms** (high volume, high commission) and **Local Market Archetypes** (lower price floor, lower commission). Use the filters below to compare retail prices and essential commission rates for high-margin cuts in both segments.
+                </p>
+            </section>
+            
+            <!-- Key Metrics -->
+            <section id="metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div class="metric-card p-6 rounded-lg text-center">
+                    <h3 class="text-lg font-medium text-gray-500">National Platforms Analyzed</h3>
+                    <p id="platforms-count" class="text-4xl font-bold text-emerald-600">8</p>
+                </div>
+                <div class="metric-card p-6 rounded-lg text-center">
+                    <h3 class="text-lg font-medium text-gray-500">National Avg. Price/Kg (Current Cut)</h3>
+                    <p id="average-price" class="text-4xl font-bold text-emerald-600">₹0</p>
+                </div>
+                <div class="metric-card p-6 rounded-lg text-center">
+                    <h3 class="text-lg font-medium text-gray-500">Highest Commission Rate (Est.)</h3>
+                    <p id="highest-commission" class="text-2xl md:text-3xl font-bold text-red-500">-</p>
+                </div>
+            </section>
+
+            <!-- 1. Interactive Price Comparison: TOP 8 NATIONAL BRANDS -->
+            <section id="comparison-national" class="mb-12 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">1. Top 8 National Brands: Price & Commission Comparison</h2>
+                    <div class="w-full sm:w-auto">
+                        <label for="cut-filter-national" class="sr-only">Select Mutton Cut</label>
+                        <select id="cut-filter-national" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chart-container mb-8">
+                    <canvas id="nationalPriceChart"></canvas>
+                </div>
+                
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-12">Detailed Breakdown (in ₹) and Commission</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase table-header">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 rounded-l-lg">Platform</th>
+                                <th scope="col" class="px-6 py-3">250g</th>
+                                <th scope="col" class="px-6 py-3">500g</th>
+                                <th scope="col" class="px-6 py-3">750g</th>
+                                <th scope="col" class="px-6 py-3">1000g</th>
+                                <th scope="col" class="px-6 py-3">Est. Commission %</th>
+                                <th scope="col" class="px-6 py-3 rounded-r-lg">Price per Kg (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="national-price-table-body">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- 2. Interactive Price Comparison: TOP 8 LOCAL BRANDS (Updated Data) -->
+            <section id="comparison-local" class="mb-12 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">2. Top 8 Local Brands: Price & Commission Comparison</h2>
+                    <div class="w-full sm:w-auto">
+                        <label for="cut-filter-local" class="sr-only">Select Mutton Cut</label>
+                        <select id="cut-filter-local" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chart-container mb-8">
+                    <canvas id="localPriceChart2"></canvas>
+                </div>
+                
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-12">Detailed Breakdown (in ₹) and Commission (Simulated Local Data)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase table-header">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 rounded-l-lg">Archetype / Brand</th>
+                                <th scope="col" class="px-6 py-3">250g</th>
+                                <th scope="col" class="px-6 py-3">500g</th>
+                                <th scope="col" class="px-6 py-3">750g</th>
+                                <th scope="col" class="px-6 py-3">1000g</th>
+                                <th scope="col" class="px-6 py-3">Est. Commission %</th>
+                                <th scope="col" class="px-6 py-3 rounded-r-lg">Price per Kg (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="local-price-table-body2">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- 4. Partnership Profit Modeling Container (Hybrid) -->
+            <section id="profit-modeling" class="mb-12 bg-white p-6 rounded-lg shadow-xl border border-blue-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <span>💰 Partnership Profit Modeler</span>
+                </h2>
+                <p class="text-gray-700 mb-6">
+                    Calculate the necessary **Retail Price** and the full financial breakdown for a specific **pack size** sold, using commissions from both National and Local partners.
+                </p>
+
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                    <!-- Input 1: Quantity Selector -->
+                    <div>
+                        <label for="input-quantity" class="block text-sm font-medium text-gray-700">1. Select Quantity</label>
+                        <select id="input-quantity" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                            <option value="250">250g</option>
+                            <option value="500" selected>500g</option>
+                            <option value="750">750g</option>
+                            <option value="1000">1000g (1 Kg)</option>
+                        </select>
+                    </div>
+                    <!-- Input 2: COGS per Kg -->
+                    <div>
+                        <label for="input-cogs" class="block text-sm font-medium text-gray-700">2. Your COGS (₹/Kg)</label>
+                        <input type="number" id="input-cogs" value="650" min="1" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                    </div>
+                    <!-- Input 3: Target Margin -->
+                    <div>
+                        <label for="input-margin" class="block text-sm font-medium text-gray-700">3. Your Target Gross Margin (%)</label>
+                        <input type="number" id="input-margin" value="25" min="5" max="50" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                    </div>
+                    <!-- Input 4: Platform Selection (Now includes Local) -->
+                    <div>
+                        <label for="select-platform" class="block text-sm font-medium text-gray-700">4. Select Target Platform</label>
+                        <select id="select-platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                            <!-- Options populated by JS (National + Local) -->
+                        </select>
+                        <p id="commission-display" class="text-xs text-red-600 mt-1 font-semibold">Commission: 28%</p>
+                    </div>
+                    <!-- Button -->
+                    <div class="flex items-end">
+                        <button id="calculate-profit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-150 shadow-md">
+                            Calculate Pricing
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div id="profit-results" class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                    <!-- Metric A: Supplier Sale Price -->
+                    <div class="result-card p-4 rounded-lg text-center">
+                        <h4 class="text-xs font-semibold text-blue-700 uppercase">A. Supplier Price (You Sell To Brand)</h4>
+                        <p id="output-supplier-price" class="text-xl font-bold text-gray-800 mt-1">₹0</p>
+                    </div>
+                    <!-- Metric C: Your Gross Profit -->
+                    <div class="result-card p-4 rounded-lg text-center">
+                        <h4 class="text-xs font-semibold text-blue-700 uppercase">C. Your Gross Profit (Your Earnings)</h4>
+                        <p id="output-supplier-profit" class="text-xl font-bold text-gray-800 mt-1">₹0</p>
+                    </div>
+                    <!-- Metric B: Retail Price -->
+                    <div class="result-card p-4 rounded-lg text-center">
+                        <h4 class="text-xs font-semibold text-blue-700 uppercase">B. Brand Retail Price (Customer Pays)</h4>
+                        <p id="output-retail-price" class="text-xl font-bold text-gray-800 mt-1">₹0</p>
+                    </div>
+                     <!-- Metric D: Brand Gross Margin -->
+                    <div class="result-card p-4 rounded-lg text-center">
+                        <h4 class="text-xs font-semibold text-blue-700 uppercase">D. Brand Gross Margin (Platform Keeps)</h4>
+                        <p id="output-brand-margin" class="text-xl font-bold text-gray-800 mt-1">₹0</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-4">
+                    *Calculation Note: Retail Price (B) is the price needed to cover the Supplier Price (A) after the platform takes its commission percentage. $B = A / (1 - \text{Commission Rate})$.
+                </p>
+            </section>
+
+
+            <!-- Gemini LLM Feature 2: AI Pricing Strategy -->
+             <section id="pricing-advisor" class="mb-12 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">✨</span> AI Pricing Strategy Advisor (National Market)
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Analyze the current **selected cut**'s market price range (National Platforms) and receive a strategic recommendation from an AI Financial Analyst. (Assumes a 25% target gross profit margin on your cost.)
+                </p>
+
+                <div class="flex items-center justify-center mb-6">
+                    <button id="analyze-pricing-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg transition duration-150 shadow-md">
+                        Analyze Current Market & Recommend Price
+                    </button>
+                </div>
+
+                <div id="pricing-strategy-output" class="ai-output-box p-4 rounded-lg text-gray-800">
+                    Click 'Analyze Current Market & Recommend Price' to get a strategic recommendation for the currently selected cut.
+                </div>
+            </section>
+            
+            <!-- Gemini LLM Feature 3: Marketing Copy Generator -->
+            <section id="copywriter" class="mb-12 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">✨</span> Marketing Copy Generator
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Instantly generate short, persuasive marketing copy (e.g., for a social media post) tailored to a specific cut and target platform's marketing style.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label for="copy-cut" class="block text-sm font-medium text-gray-700">Mutton Cut</label>
+                        <select id="copy-cut" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="copy-tone" class="block text-sm font-medium text-gray-700">Target Tone/Platform</label>
+                        <select id="copy-tone" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 mt-1">
+                            <option value="Premium Quality and Hygiene (Licious style)">Premium Quality & Hygiene</option>
+                            <option value="Ultra-Fast Speed and Convenience (Zepto style)">Ultra-Fast Speed & Convenience</option>
+                            <option value="Best Value and Versatility (BigBasket style)">Best Value & Versatility</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="generate-copy-btn" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-150 shadow-md">
+                            Draft Marketing Post
+                        </button>
+                    </div>
+                </div>
+
+                <div id="marketing-copy-output" class="ai-output-box p-4 rounded-lg mt-4 text-gray-800">
+                    Select the cut and tone, then click 'Draft Marketing Post' to generate your copy!
+                </div>
+            </section>
+            
+            <!-- Recommendations (Existing Section) -->
+            <section id="recommendations">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Partnership Recommendations for Profitability</h2>
+                    <p class="mt-2 text-lg text-gray-600">Based on the market analysis, here are three potential partnership strategies with top-tier platforms.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="recommendation-card p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-emerald-700">1. Premium Quality Partner (High Margin)</h3>
+                        <p class="font-medium text-gray-800 mb-2">National: **Licious** (28% Commission) | Local: **Nalli Meats** (18% Commission)</p>
+                        <p class="text-gray-600">
+                            <strong class="text-gray-700">Strategy:</strong> Focus on superior quality and specialized cuts like **Goat Boneless** (highest retail price). Licious offers the highest customer price ceiling (up to ₹1198/Kg). Use **Nalli Meats** locally for high-end cuts to maximize your *net profit*, as their lower commission rate retains more of the margin while maintaining a premium price point. This model is ideal for brand building.
+                            <br><br>
+                            <strong class="text-gray-700">Pros:</strong> Highest potential retail price and brand value.
+                            <br>
+                            <strong class="text-gray-700">Cons:</strong> Strict quality control, high commission rates on national platforms.
+                        </p>
+                    </div>
+                    <div class="recommendation-card p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-emerald-700">2. High Volume / Quick Commerce Partner (High Reach)</h3>
+                        <p class="font-medium text-gray-800 mb-2">National: **Zepto** (30% Commission) | Local: **Deccan Butcher** (10% Commission)</p>
+                        <p class="text-gray-600">
+                           <strong class="text-gray-700">Strategy:</strong> Supply fast-moving standard cuts like **Goat Curry Cut** to quick commerce giants like Zepto and Blinkit. While commissions are the highest (30%), the sheer volume and quick turnover compensate, especially for standard cuts. Locally, target a low-commission/low-price archetype like **Deccan Butcher** to establish a high-volume base with minimal partnership overhead.
+                           <br><br>
+                           <strong class="text-gray-700">Pros:</strong> Massive order volume, unparalleled customer reach, quick inventory turnover.
+                           <br>
+                           <strong class="text-gray-700">Cons:</strong> Intense price pressure, highest commission rates nationally.
+                        </p>
+                    </div>
+                     <div class="recommendation-card p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-emerald-700">3. Marketplace & Value Partner (Best Balance)</h3>
+                        <p class="font-medium text-gray-800 mb-2">National: **BigBasket (Fresho)** (18% Commission) | Local: **Godavari Cuts** (12% Commission)</p>
+                        <p class="text-gray-600">
+                            <strong class="text-gray-700">Strategy:</strong> This strategy offers the most sustainable profit/volume balance. **BigBasket** provides the lowest commission rate among major national players (18%) and access to high grocery traffic. Use their marketplace to build volume. Complement this by partnering with a local retailer archetype like **Godavari Cuts** (12% commission) to dominate the mid-price, reliable local segment. This diversifies risk and improves your overall net margin.
+                            <br><br>
+                            <strong class="text-gray-700">Pros:</strong> Lowest national commission option; strong grocery traffic; diversified risk.
+                            <br>
+                            <strong class="text-gray-700">Cons:</strong> Competition is high; your brand must stand out among many other suppliers listed.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-12 pt-8 border-t border-gray-200">
+            <p class="text-gray-500">&copy; 2025 Mutton Market Insights. Powered by Gemini LLM.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const API_KEY = ""; 
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent";
+
+        // Mutton price data for Hyderabad (Price per Kg, Commission %) - TOP 8 NATIONAL BRANDS
+        const nationalMarketData = [
+            { platform: 'Licious', cut: 'Goat Curry Cut', prices: { '250': null, '500': 419, '750': null, '1000': 835 }, perKg: 838, commission: 28 },
+            { platform: 'Licious', cut: 'Goat Boneless', prices: { '250': null, '500': 599, '750': null, '1000': 1198 }, perKg: 1198, commission: 28 },
+            { platform: 'Licious', cut: 'Goat Mince (Keema)', prices: { '250': 255, '500': 509, '750': null, '1000': 1018 }, perKg: 1018, commission: 28 },
+            { platform: 'FreshToHome', cut: 'Goat Curry Cut', prices: { '250': null, '500': 399, '750': null, '1000': 798 }, perKg: 798, commission: 25 },
+            { platform: 'FreshToHome', cut: 'Goat Boneless', prices: { '250': null, '500': 575, '750': null, '1000': 1150 }, perKg: 1150, commission: 25 },
+            { platform: 'FreshToHome', cut: 'Goat Mince (Keema)', prices: { '250': null, '500': 495, '750': null, '1000': 990 }, perKg: 990, commission: 25 },
+            { platform: 'TenderCuts', cut: 'Goat Curry Cut', prices: { '250': 210, '500': 415, '750': 622, '1000': 829 }, perKg: 829, commission: 20 },
+            { platform: 'TenderCuts', cut: 'Goat Boneless', prices: { '250': null, '500': 580, '750': null, '1000': 1160 }, perKg: 1160, commission: 20 },
+            { platform: 'TenderCuts', cut: 'Goat Mince (Keema)', prices: { '250': null, '500': 510, '750': null, '1000': 1020 }, perKg: 1020, commission: 20 },
+            { platform: 'Fipola', cut: 'Goat Curry Cut', prices: { '250': 205, '500': 410, '750': 615, '1000': 820 }, perKg: 820, commission: 22 },
+            { platform: 'Fipola', cut: 'Goat Boneless', prices: { '250': null, '500': 570, '750': null, '1000': 1140 }, perKg: 1140, commission: 22 },
+            { platform: 'Blinkit (ChefiGo)', cut: 'Goat Curry Cut', prices: { '250': null, '500': 425, '750': null, '1000': 850 }, perKg: 850, commission: 30 },
+            { platform: 'Blinkit (ChefiGo)', cut: 'Goat Mince (Keema)', prices: { '250': null, '500': 525, '750': null, '1000': 1050 }, perKg: 1050, commission: 30 },
+            { platform: 'BigBasket (Fresho)', cut: 'Goat Curry Cut', prices: { '250': 200, '500': 399, '750': 598, '1000': 795 }, perKg: 795, commission: 18 },
+            { platform: 'BigBasket (Fresho)', cut: 'Goat Boneless', prices: { '250': null, '500': 550, '750': null, '1000': 1100 }, perKg: 1100, commission: 18 },
+            { platform: 'BigBasket (Fresho)', cut: 'Goat Mince (Keema)', prices: { '250': 250, '500': 499, '750': null, '1000': 998 }, perKg: 998, commission: 18 },
+            { platform: 'Zepto (Relish)', cut: 'Goat Curry Cut', prices: { '250': null, '500': 449, '750': null, '1000': 898 }, perKg: 898, commission: 30 },
+            { platform: 'Zepto (Relish)', cut: 'Goat Mince (Keema)', prices: { '250': null, '500': 519, '750': null, '1000': 1038 }, perKg: 1038, commission: 30 },
+            { platform: 'Meatigo', cut: 'Goat Curry Cut', prices: { '250': null, '500': 430, '750': null, '1000': 860 }, perKg: 860, commission: 25 },
+        ];
+        
+        // Mutton price data for Hyderabad (Price per Kg, Commission %) - SIMULATED LOCAL BRANDS (8 ARCHETYPES)
+        // Prices are generally lower and commissions are lower than national brands.
+        const localMarketData = [
+            // Goat Curry Cut (8 unique local brands)
+            { platform: 'Nalli Meats (Premium Local)', cut: 'Goat Curry Cut', prices: { '250': 220, '500': 440, '750': 660, '1000': 880 }, perKg: 880, commission: 18 },
+            { platform: 'Hyderabad Fresh Meats', cut: 'Goat Curry Cut', prices: { '250': 200, '500': 400, '750': 600, '1000': 800 }, perKg: 800, commission: 15 },
+            { platform: 'Godavari Cuts (Retailer)', cut: 'Goat Curry Cut', prices: { '250': 195, '500': 390, '750': 585, '1000': 780 }, perKg: 780, commission: 12 },
+            { platform: 'Chicha\'s Mutton (Specialty)', cut: 'Goat Curry Cut', prices: { '250': 210, '500': 420, '750': 630, '1000': 840 }, perKg: 840, commission: 20 },
+            { platform: 'Qutub Shahi Meats (Halal)', cut: 'Goat Curry Cut', prices: { '250': 190, '500': 380, '750': 570, '1000': 760 }, perKg: 760, commission: 14 },
+            { platform: 'Deccan Butcher (Value)', cut: 'Goat Curry Cut', prices: { '250': 180, '500': 360, '750': 540, '1000': 720 }, perKg: 720, commission: 10 },
+            { platform: 'Sultan Meats (Mid-High)', cut: 'Goat Curry Cut', prices: { '250': 205, '500': 410, '750': 615, '1000': 820 }, perKg: 820, commission: 16 },
+            { platform: 'Azamgarh Meats (Bulk)', cut: 'Goat Curry Cut', prices: { '250': 175, '500': 350, '750': 525, '1000': 700 }, perKg: 700, commission: 11 },
+            
+            // Goat Boneless (8 unique local brands)
+            { platform: 'Nalli Meats (Premium Local)', cut: 'Goat Boneless', prices: { '250': 300, '500': 600, '750': 900, '1000': 1200 }, perKg: 1200, commission: 18 },
+            { platform: 'Hyderabad Fresh Meats', cut: 'Goat Boneless', prices: { '250': 275, '500': 550, '750': 825, '1000': 1100 }, perKg: 1100, commission: 15 },
+            { platform: 'Godavari Cuts (Retailer)', cut: 'Goat Boneless', prices: { '250': 260, '500': 520, '750': 780, '1000': 1040 }, perKg: 1040, commission: 12 },
+            { platform: 'Chicha\'s Mutton (Specialty)', cut: 'Goat Boneless', prices: { '250': 290, '500': 580, '750': 870, '1000': 1160 }, perKg: 1160, commission: 20 },
+            { platform: 'Qutub Shahi Meats (Halal)', cut: 'Goat Boneless', prices: { '250': 250, '500': 500, '750': 750, '1000': 1000 }, perKg: 1000, commission: 14 },
+            { platform: 'Deccan Butcher (Value)', cut: 'Goat Boneless', prices: { '250': 240, '500': 480, '750': 720, '1000': 960 }, perKg: 960, commission: 10 },
+            { platform: 'Sultan Meats (Mid-High)', cut: 'Goat Boneless', prices: { '250': 285, '500': 570, '750': 855, '1000': 1140 }, perKg: 1140, commission: 16 },
+            { platform: 'Azamgarh Meats (Bulk)', cut: 'Goat Boneless', prices: { '250': 230, '500': 460, '750': 690, '1000': 920 }, perKg: 920, commission: 11 },
+            
+            // Goat Mince (Keema) (8 unique local brands)
+            { platform: 'Nalli Meats (Premium Local)', cut: 'Goat Mince (Keema)', prices: { '250': 250, '500': 500, '750': 750, '1000': 1000 }, perKg: 1000, commission: 18 },
+            { platform: 'Hyderabad Fresh Meats', cut: 'Goat Mince (Keema)', prices: { '250': 230, '500': 460, '750': 690, '1000': 920 }, perKg: 920, commission: 15 },
+            { platform: 'Godavari Cuts (Retailer)', cut: 'Goat Mince (Keema)', prices: { '250': 220, '500': 440, '750': 660, '1000': 880 }, perKg: 880, commission: 12 },
+            { platform: 'Chicha\'s Mutton (Specialty)', cut: 'Goat Mince (Keema)', prices: { '250': 245, '500': 490, '750': 735, '1000': 980 }, perKg: 980, commission: 20 },
+            { platform: 'Qutub Shahi Meats (Halal)', cut: 'Goat Mince (Keema)', prices: { '250': 210, '500': 420, '750': 630, '1000': 840 }, perKg: 840, commission: 14 },
+            { platform: 'Deccan Butcher (Value)', cut: 'Goat Mince (Keema)', prices: { '250': 200, '500': 400, '750': 600, '1000': 800 }, perKg: 800, commission: 10 },
+            { platform: 'Sultan Meats (Mid-High)', cut: 'Goat Mince (Keema)', prices: { '250': 235, '500': 470, '750': 705, '1000': 940 }, perKg: 940, commission: 16 },
+            { platform: 'Azamgarh Meats (Bulk)', cut: 'Goat Mince (Keema)', prices: { '250': 190, '500': 380, '750': 570, '1000': 760 }, perKg: 760, commission: 11 },
+        ];
+
+
+        // Benchmark data (used in the Price Gap Analysis chart/table)
+        const benchmarkData = [
+            { platform: 'National Avg.', type: 'National Platform', commission: 24 }, 
+            { platform: 'Local Avg.', type: 'Local Platform', commission: 15 }, 
+            { platform: 'Mandi Price Est.', type: 'Price Floor', commission: 0 }
+        ];
+
+
+        const platformsCountEl = document.getElementById('platforms-count');
+        const averagePriceEl = document.getElementById('average-price');
+        const highestCommissionEl = document.getElementById('highest-commission');
+        
+        // National Elements
+        const cutFilterNationalEl = document.getElementById('cut-filter-national');
+        const nationalPriceTableBodyEl = document.getElementById('national-price-table-body');
+        const selectPlatformEl = document.getElementById('select-platform');
+        const commissionDisplayEl = document.getElementById('commission-display');
+        const nationalCtx = document.getElementById('nationalPriceChart').getContext('2d');
+        
+        // Local Elements (New)
+        const cutFilterLocalEl = document.getElementById('cut-filter-local');
+        const localPriceTableBody2El = document.getElementById('local-price-table-body2');
+        const localCtx2 = document.getElementById('localPriceChart2').getContext('2d');
+        
+        // Profit Modeler Elements
+        const inputQuantityEl = document.getElementById('input-quantity'); 
+        const inputCogsEl = document.getElementById('input-cogs');
+        const inputMarginEl = document.getElementById('input-margin');
+        const calculateProfitBtn = document.getElementById('calculate-profit-btn');
+        const outputSupplierPriceEl = document.getElementById('output-supplier-price');
+        const outputRetailPriceEl = document.getElementById('output-retail-price');
+        const outputSupplierProfitEl = document.getElementById('output-supplier-profit');
+        const outputBrandMarginEl = document.getElementById('output-brand-margin');
+
+        // LLM Elements
+        const analyzePricingBtn = document.getElementById('analyze-pricing-btn');
+        const pricingStrategyOutputEl = document.getElementById('pricing-strategy-output');
+        const copyCutEl = document.getElementById('copy-cut'); 
+        const copyToneEl = document.getElementById('copy-tone'); 
+        const generateCopyBtn = document.getElementById('generate-copy-btn'); 
+        const marketingCopyOutputEl = document.getElementById('marketing-copy-output'); 
+
+        let nationalPriceChart;
+        let localPriceChart2;
+        let currentNationalMetrics = {}; 
+        let currentLocalMetrics = {}; 
+
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response;
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        function populateFilters() {
+            // Populate all filter/select elements
+            const nationalCuts = [...new Set(nationalMarketData.map(item => item.cut))];
+            const localCuts = [...new Set(localMarketData.map(item => item.cut))];
+            
+            const uniqueCuts = [...new Set([...nationalCuts, ...localCuts])];
+
+            const selectsToPopulate = [cutFilterNationalEl, cutFilterLocalEl, copyCutEl]; // inputCutEl removed
+            selectsToPopulate.forEach(selectEl => {
+                selectEl.innerHTML = '';
+                uniqueCuts.forEach(cut => {
+                    const option = document.createElement('option');
+                    option.value = cut;
+                    option.textContent = cut;
+                    selectEl.appendChild(option);
+                });
+            });
+            
+            // --- PROFIT MODELLER PLATFORM POPULATION (HYBRID) ---
+            const allMarketData = [...nationalMarketData, ...localMarketData];
+            
+            const uniquePlatforms = allMarketData.reduce((acc, item) => {
+                const prefix = nationalMarketData.some(n => n.platform === item.platform) ? "National: " : "Local: ";
+                const key = prefix + item.platform;
+                
+                if (!acc.find(p => p.key === key)) {
+                    acc.push({ 
+                        key: key, 
+                        platform: item.platform, 
+                        commission: item.commission 
+                    });
+                }
+                return acc;
+            }, []);
+
+            // Sort by commission descending for high-to-low analysis
+            uniquePlatforms.sort((a, b) => b.commission - a.commission);
+
+            selectPlatformEl.innerHTML = '';
+            uniquePlatforms.forEach(item => {
+                const optgroupLabel = item.key.startsWith("National") ? "National Platforms (High Commission)" : "Local Archetypes (Low Commission)";
+                
+                let optgroup = selectPlatformEl.querySelector(`optgroup[label="${optgroupLabel}"]`);
+                if (!optgroup) {
+                    optgroup = document.createElement('optgroup');
+                    optgroup.label = optgroupLabel;
+                    selectPlatformEl.appendChild(optgroup);
+                }
+
+                const option = document.createElement('option');
+                option.value = item.commission;
+                option.textContent = `${item.platform} (${item.commission}%)`;
+                optgroup.appendChild(option);
+            });
+            
+            // Set initial commission display based on the first item (Licious)
+            const initialCommission = uniquePlatforms[0].commission;
+            selectPlatformEl.value = initialCommission;
+            commissionDisplayEl.textContent = `Commission: ${initialCommission}%`;
+        }
+
+        function updateCommissionDisplay() {
+            const selectedCommission = selectPlatformEl.value;
+            commissionDisplayEl.textContent = `Commission: ${selectedCommission}%`;
+            calculateProfitModel(); 
+        }
+
+        function wrapText(str, maxWidth) {
+            const words = str.split(' ');
+            let lines = [];
+            let currentLine = words[0];
+        
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                if (currentLine.length + word.length + 1 <= maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        function updateDashboard(nationalCut, localCut) {
+            updateNationalComparison(nationalCut);
+            updateLocalComparison(localCut);
+            calculateProfitModel(); 
+        }
+
+        /* --- NATIONAL COMPARISON LOGIC --- */
+
+        function updateNationalMetrics(data) {
+            if (data.length === 0) {
+                averagePriceEl.textContent = 'N/A';
+                highestCommissionEl.textContent = 'N/A';
+                currentNationalMetrics = { avg: 0, min: 0, max: 0, cut: cutFilterNationalEl.value, avgCommission: 0 };
+                return;
+            }
+
+            const prices = data.map(item => item.perKg);
+            const total = prices.reduce((sum, price) => sum + price, 0);
+            const avg = total / data.length;
+            const avgCommission = data.reduce((sum, item) => sum + item.commission, 0) / data.length;
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const highestCommission = data.reduce((maxItem, item) => item.commission > maxItem.commission ? item : maxItem, data[0]);
+
+            averagePriceEl.textContent = `₹${Math.round(avg)}`;
+            highestCommissionEl.textContent = `${highestCommission.commission}% (${highestCommission.platform})`;
+
+            currentNationalMetrics = { avg, min, max, cut: cutFilterNationalEl.value, platforms: data.length, avgCommission: Math.round(avgCommission) };
+        }
+
+        function updateNationalTable(data) {
+            nationalPriceTableBodyEl.innerHTML = '';
+            data.sort((a,b) => a.perKg - b.perKg).forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "bg-white border-b hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${item.platform}</td>
+                    <td class="px-6 py-4">${item.prices['250'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['500'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['750'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['1000'] || '-'}</td>
+                    <td class="px-6 py-4 font-semibold text-red-600">${item.commission}%</td>
+                    <td class="px-6 py-4 font-semibold text-gray-800">₹${item.perKg}</td>
+                `;
+                nationalPriceTableBodyEl.appendChild(row);
+            });
+        }
+
+        function updateNationalChart(data) {
+            data.sort((a,b) => b.perKg - a.perKg);
+            const labels = data.map(item => wrapText(item.platform, 16));
+            const prices = data.map(item => item.perKg);
+            
+            if(nationalPriceChart) {
+                nationalPriceChart.destroy();
+            }
+
+            nationalPriceChart = new Chart(nationalCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Price per Kg (₹)',
+                        data: prices,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Price per Kg (₹)'
+                            }
+                        },
+                        y: {
+                           ticks: {
+                                autoSkip: false
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function (context) {
+                                    return context[0].label.replace(/,/g, ' ');
+                                },
+                                label: function(context) {
+                                    return `Price: ₹${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateNationalComparison(selectedCut) {
+            const filteredData = nationalMarketData.filter(item => item.cut === selectedCut);
+            updateNationalMetrics(filteredData);
+            updateNationalTable(filteredData);
+            updateNationalChart(filteredData);
+        }
+
+        /* --- LOCAL COMPARISON LOGIC (Section 2) --- */
+
+        function updateLocalTable(data) {
+            localPriceTableBody2El.innerHTML = '';
+            data.sort((a,b) => a.perKg - b.perKg).forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "bg-white border-b hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${item.platform}</td>
+                    <td class="px-6 py-4">${item.prices['250'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['500'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['750'] || '-'}</td>
+                    <td class="px-6 py-4">${item.prices['1000'] || '-'}</td>
+                    <td class="px-6 py-4 font-semibold text-red-500">${item.commission}%</td>
+                    <td class="px-6 py-4 font-semibold text-gray-800">₹${item.perKg}</td>
+                `;
+                localPriceTableBody2El.appendChild(row);
+            });
+
+            if (data.length > 0) {
+                 const prices = data.map(item => item.perKg);
+                 const total = prices.reduce((sum, price) => sum + price, 0);
+                 currentLocalMetrics.avg = total / data.length;
+            }
+        }
+
+        function updateLocalChart(data) {
+            data.sort((a,b) => b.perKg - a.perKg);
+            const labels = data.map(item => wrapText(item.platform, 16));
+            const prices = data.map(item => item.perKg);
+            
+            if(localPriceChart2) {
+                localPriceChart2.destroy();
+            }
+
+            localPriceChart2 = new Chart(localCtx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Price per Kg (₹)',
+                        data: prices,
+                        backgroundColor: 'rgba(255, 165, 0, 0.7)',
+                        borderColor: 'rgba(255, 165, 0, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Price per Kg (₹)'
+                            }
+                        },
+                        y: {
+                           ticks: {
+                                autoSkip: false
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function (context) {
+                                    return context[0].label.replace(/,/g, ' ');
+                                },
+                                label: function(context) {
+                                    return `Price: ₹${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLocalComparison(selectedCut) {
+            const filteredData = localMarketData.filter(item => item.cut === selectedCut);
+            updateLocalTable(filteredData);
+            updateLocalChart(filteredData);
+        }
+        
+        /* --- PROFIT MODELER LOGIC --- */
+        
+        function calculateProfitModel() {
+            const quantityGrams = parseFloat(inputQuantityEl.value) || 1000;
+            const cogsPerKg = parseFloat(inputCogsEl.value) || 0;
+            const targetMarginPercent = parseFloat(inputMarginEl.value) || 0;
+            const commissionPercent = parseFloat(selectPlatformEl.value) || 0;
+
+            if (cogsPerKg <= 0 || targetMarginPercent < 0 || commissionPercent >= 100) {
+                outputSupplierPriceEl.textContent = '₹0';
+                outputRetailPriceEl.textContent = '₹0';
+                outputSupplierProfitEl.textContent = '₹0';
+                outputBrandMarginEl.textContent = '₹0';
+                return;
+            }
+
+            const targetMarginDecimal = targetMarginPercent / 100;
+            const commissionDecimal = commissionPercent / 100;
+
+            // Calculate COGS for the selected quantity
+            const cogsForQuantity = (cogsPerKg / 1000) * quantityGrams;
+
+            // 1. Supplier Sale Price (Priced to Brand) = COGS_Q * (1 + Margin)
+            const supplierSalePrice = cogsForQuantity * (1 + targetMarginDecimal);
+            
+            // 2. Brand Retail Price (Priced to Customer) = Supplier Price / (1 - Commission)
+            const brandRetailPrice = supplierSalePrice / (1 - commissionDecimal);
+            
+            // 3. Supplier Gross Profit = Supplier Price - COGS_Q
+            const supplierGrossProfit = supplierSalePrice - cogsForQuantity;
+            
+            // 4. Brand Gross Margin = Retail Price * Commission
+            const brandGrossMargin = brandRetailPrice * commissionDecimal;
+
+            outputSupplierPriceEl.textContent = `₹${Math.round(supplierSalePrice)}`;
+            outputRetailPriceEl.textContent = `₹${Math.round(brandRetailPrice)}`;
+            outputSupplierProfitEl.textContent = `₹${Math.round(supplierGrossProfit)}`;
+            outputBrandMarginEl.textContent = `₹${Math.round(brandGrossMargin)}`;
+        }
+
+
+        /* --- LLM TOOL LOGIC (uses National Metrics) --- */
+
+        async function analyzePricingStrategy() {
+            pricingStrategyOutputEl.innerHTML = '<div class="flex items-center justify-center h-full"><div class="loading-spinner"></div><span class="ml-3 text-gray-600">Analyzing market and strategizing...</span></div>';
+
+            const { avg, min, max, cut, avgCommission } = currentNationalMetrics;
+            if (!cut || avg === 0) {
+                pricingStrategyOutputEl.innerHTML = `<p class="text-red-600">Please select a cut in the comparison section first or ensure data is available.</p>`;
+                return;
+            }
+
+            const targetMargin = 25; 
+            const systemPrompt = "You are a senior financial and market analyst for a food tech startup. Analyze the provided competitor data, commission rates, and target profit margin. Recommend a primary pricing strategy (Premium, Value, or Match) and justify it concisely in one paragraph (max 100 words). Do not use bullet points or lists in the main text. Include a final sentence with suggested selling prices for 250g and 500g that achieve a 25% gross profit over the average competitor price, factoring in the average commission rate.";
+            const userQuery = `Analyze the Hyderabad market for the cut: "${cut}". Competitor price range is from Lowest (₹${min}/Kg) to Highest (₹${max}/Kg). The average retail price is ₹${Math.round(avg)}/Kg. The average platform commission is ${avgCommission}%. Recommend a pricing strategy assuming a supplier cost that allows for a ${targetMargin}% gross profit on the final selling price.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const response = await fetchWithRetry(`${API_URL}?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const strategyText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!strategyText) throw new Error("API returned no content.");
+                
+                pricingStrategyOutputEl.innerHTML = `<p class="text-gray-800 leading-relaxed">${strategyText}</p>`;
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                pricingStrategyOutputEl.innerHTML = `<p class="text-red-600">Error analyzing pricing: ${error.message}. Please try again.</p>`;
+            }
+        }
+
+        async function generateMarketingCopy() {
+            marketingCopyOutputEl.innerHTML = '<div class="flex items-center justify-center h-full"><div class="loading-spinner"></div><span class="ml-3 text-gray-600">Drafting copy...</span></div>';
+            
+            const cut = copyCutEl.value;
+            const tone = copyToneEl.value;
+
+            const systemPrompt = "You are a highly creative and persuasive digital copywriter specializing in perishable goods and food delivery marketing. Your tone must match the requested style. Write a single, short (max 3 sentences) marketing message for a social media post, including relevant emojis, for the user's fresh goat meat product. Focus on urgency, quality, or value, depending on the tone.";
+            const userQuery = `Write a short social media post for our FRESH Goat Mutton, specific to the cut: ${cut}. The tone must be focused on: ${tone}.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const response = await fetchWithRetry(`${API_URL}?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const copyText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!copyText) throw new Error("API returned no content.");
+                
+                // Format the output as a stylized quote or text block
+                marketingCopyOutputEl.innerHTML = `
+                    <div class="border-l-4 border-pink-500 pl-4 py-2">
+                        <p class="text-xl italic text-gray-800">${copyText}</p>
+                        <p class="text-sm text-gray-500 mt-2">— Generated Marketing Draft</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                marketingCopyOutputEl.innerHTML = `<p class="text-red-600">Error generating marketing copy: ${error.message}. Please try again.</p>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const uniquePlatforms = new Set(nationalMarketData.map(d => d.platform));
+            platformsCountEl.textContent = uniquePlatforms.size;
+
+            populateFilters();
+            
+            // Set initial cuts for both filters
+            const initialNationalCut = cutFilterNationalEl.value || (nationalMarketData.length > 0 ? nationalMarketData[0].cut : 'N/A');
+            const initialLocalCut = cutFilterLocalEl.value || (localMarketData.length > 0 ? localMarketData[0].cut : 'N/A');
+            
+            // Initialize dashboard
+            updateDashboard(initialNationalCut, initialLocalCut);
+
+            // Listeners
+            cutFilterNationalEl.addEventListener('change', (e) => updateDashboard(e.target.value, cutFilterLocalEl.value));
+            cutFilterLocalEl.addEventListener('change', (e) => updateDashboard(cutFilterNationalEl.value, e.target.value));
+
+            selectPlatformEl.addEventListener('change', updateCommissionDisplay);
+            inputQuantityEl.addEventListener('change', calculateProfitModel); 
+            inputCogsEl.addEventListener('input', calculateProfitModel);
+            inputMarginEl.addEventListener('input', calculateProfitModel);
+            calculateProfitBtn.addEventListener('click', calculateProfitModel);
+            
+            analyzePricingBtn.addEventListener('click', analyzePricingStrategy);
+            generateCopyBtn.addEventListener('click', generateMarketingCopy); 
+        });
+
+    </script>
+</body>
+</html>
